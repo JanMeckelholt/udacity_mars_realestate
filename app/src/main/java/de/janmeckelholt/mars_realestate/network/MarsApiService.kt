@@ -17,4 +17,28 @@
 
 package de.janmeckelholt.mars_realestate.network
 
+import retrofit2.Call
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.http.GET
+
 private const val BASE_URL = "https://mars.udacity.com/"
+
+private val retrofit = Retrofit.Builder()
+    .addConverterFactory(MoshiConverterFactory.create())
+    .baseUrl(BASE_URL)
+    .build()
+
+interface MarsApiService {
+    @GET("realestate")
+    fun getProperties():
+            Call<Any>
+}
+
+object MarsApi {
+    val retrofitService : MarsApiService by lazy {
+        retrofit.create(MarsApiService::class.java)
+    }
+}
+
+

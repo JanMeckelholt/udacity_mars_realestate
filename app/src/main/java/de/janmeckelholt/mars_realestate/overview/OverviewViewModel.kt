@@ -20,6 +20,11 @@ package de.janmeckelholt.mars_realestate.overview
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import de.janmeckelholt.mars_realestate.network.MarsApi
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import timber.log.Timber
 
 /**
  * The [ViewModel] that is attached to the [OverviewFragment].
@@ -44,6 +49,19 @@ class OverviewViewModel : ViewModel() {
      * Sets the value of the status LiveData to the Mars API status.
      */
     private fun getMarsRealEstateProperties() {
+        MarsApi.retrofitService.getProperties().enqueue(object: Callback<Any> {
+            override fun onResponse(call: Call<Any>, response: Response<Any>) {
+                Timber.i("body: ${response.message()}")
+                Timber.i("body: ${response.body()}")
+                _response.value = response.body().toString()
+            }
+
+            override fun onFailure(call: Call<Any>, t: Throwable) {
+                Timber.i("body: ${t}")
+                _response.value = "Failure: ${t.message}"
+            }
+
+        })
         _response.value = "Set the Mars API Response here!"
     }
 }
