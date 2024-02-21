@@ -20,24 +20,25 @@ package de.janmeckelholt.mars_realestate.overview
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import de.janmeckelholt.mars_realestate.network.MarsApi
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import de.janmeckelholt.mars_realestate.network.MarsProperty
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.lang.Exception
 
 /**
  * The [ViewModel] that is attached to the [OverviewFragment].
  */
 class OverviewViewModel : ViewModel() {
 
-    // The internal MutableLiveData String that stores the status of the most recent request
-    private val _response = MutableLiveData<String>()
+    private val _status = MutableLiveData<String>()
+    val status: LiveData<String>
+        get() = _status
 
-    // The external immutable LiveData for the request status String
-    val response: LiveData<String>
-        get() = _response
-
+    private val _properties = MutableLiveData<List<MarsProperty>>()
+    val properties : LiveData<List<MarsProperty>>
+        get() = _properties
     /**
      * Call getMarsRealEstateProperties() on init so we can display status immediately.
      */
@@ -45,23 +46,20 @@ class OverviewViewModel : ViewModel() {
         getMarsRealEstateProperties()
     }
 
-    /**
-     * Sets the value of the status LiveData to the Mars API status.
-     */
+
     private fun getMarsRealEstateProperties() {
-        MarsApi.retrofitService.getProperties().enqueue(object: Callback<Any> {
-            override fun onResponse(call: Call<Any>, response: Response<Any>) {
-                Timber.i("body: ${response.message()}")
-                Timber.i("body: ${response.body()}")
-                _response.value = response.body().toString()
+        viewModelScope.launch {
+            try {
+                val listResult = MarsApi.retrofitService.getProperties()
+                _status.value = "Success: ${listResult.size} properties retrieved."
+                if (listResult.isNotEmpty()){
+                    _properties.value = listResult
+                }
+            } catch (e: Exception) {
+                Timber.e("Failure getting Mars Properties: $e")
+                _status.value = "Failure getting Mars Properties: $e"
             }
+        }
 
-            override fun onFailure(call: Call<Any>, t: Throwable) {
-                Timber.i("body: ${t}")
-                _response.value = "Failure: ${t.message}"
-            }
-
-        })
-        _response.value = "Set the Mars API Response here!"
     }
 }
