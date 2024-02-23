@@ -38,6 +38,9 @@
         android:name="de.janmeckelholt.mars_realestate.detail.DetailFragment"
         android:label="fragment_detail"
         tools:layout="@layout/fragment_detail">
+        <argument
+            android:name="marsProperty"
+            app:argType="de.janmeckelholt.mars_realestate.network.MarsProperty" />
     </fragment>
 
 </navigation>

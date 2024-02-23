@@ -21,43 +21,86 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import de.janmeckelholt.mars_realestate.R
 import de.janmeckelholt.mars_realestate.network.MarsApi
 import de.janmeckelholt.mars_realestate.network.MarsProperty
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.Exception
 
-/**
- * The [ViewModel] that is attached to the [OverviewFragment].
- */
+enum class MarsApiStatus { LOADING, ERROR, DONE }
 class OverviewViewModel : ViewModel() {
 
-    private val _status = MutableLiveData<String>()
-    val status: LiveData<String>
+    private val _navigateToSelectedProperty = MutableLiveData<MarsProperty?>()
+    val navigateToSelectedProperty: LiveData<MarsProperty?>
+        get() = _navigateToSelectedProperty
+
+    private val _status = MutableLiveData<MarsApiStatus>()
+    val status: LiveData<MarsApiStatus>
         get() = _status
 
-    private val _properties = MutableLiveData<List<MarsProperty>>()
-    val properties : LiveData<List<MarsProperty>>
-        get() = _properties
-    /**
-     * Call getMarsRealEstateProperties() on init so we can display status immediately.
-     */
+    private val _headerText = MutableLiveData<String>()
+    val headerText: LiveData<String>
+        get() = _headerText
+
+    private val _properties = MutableLiveData<List<MarsProperty>?>()
+
+    private val _shownProperties = MutableLiveData<List<MarsProperty>?>()
+    val shownProperties: LiveData<List<MarsProperty>?>
+        get() = _shownProperties
+
+
+    fun showProperties(type: Int) {
+        when (type) {
+            R.id.show_rent_menu -> {
+                _shownProperties.value  = _properties.value?.filter { it.isRental }
+                _headerText.value = "Rent"
+            }
+
+            R.id.show_buy_menu -> {
+                _shownProperties.value  = _properties.value?.filter { !it.isRental }
+                _headerText.value = "Buy"
+            }
+
+            else -> {
+                _shownProperties.value = _properties.value
+                _headerText.value = "All"
+            }
+
+        }
+
+    }
+
     init {
         getMarsRealEstateProperties()
+    }
+
+    fun displayPropertyDetails(marsProperty: MarsProperty) {
+        _navigateToSelectedProperty.value = marsProperty
+    }
+
+    fun navigationDone() {
+        _navigateToSelectedProperty.value = null
     }
 
 
     private fun getMarsRealEstateProperties() {
         viewModelScope.launch {
+            MarsApiStatus.LOADING
             try {
                 val listResult = MarsApi.retrofitService.getProperties()
-                _status.value = "Success: ${listResult.size} properties retrieved."
-                if (listResult.isNotEmpty()){
+                _status.value = MarsApiStatus.DONE
+                if (listResult.isNotEmpty()) {
                     _properties.value = listResult
+                    _shownProperties.value = listResult
+                    _headerText.value = "All"
+                    Timber.i("got ${listResult.size} items")
                 }
             } catch (e: Exception) {
                 Timber.e("Failure getting Mars Properties: $e")
-                _status.value = "Failure getting Mars Properties: $e"
+                _status.value = MarsApiStatus.ERROR
+                _properties.value = ArrayList()
+                _shownProperties.value = ArrayList()
             }
         }
 

@@ -19,49 +19,57 @@ package de.janmeckelholt.mars_realestate.overview
 
 import android.os.Bundle
 import android.view.*
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import de.janmeckelholt.mars_realestate.R
 import de.janmeckelholt.mars_realestate.databinding.FragmentOverviewBinding
 
-/**
- * This fragment shows the the status of the Mars real-estate web services transaction.
- */
 class OverviewFragment : Fragment() {
 
-    /**
-     * Lazily initialize our [OverviewViewModel].
-     */
     private val viewModel: OverviewViewModel by lazy {
         ViewModelProvider(this).get(OverviewViewModel::class.java)
     }
 
-    /**
-     * Inflates the layout with Data Binding, sets its lifecycle owner to the OverviewFragment
-     * to enable Data Binding to observe LiveData, and sets up the RecyclerView with an adapter.
-     */
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         val binding : FragmentOverviewBinding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_overview, container, false)
-
-        // Allows Data Binding to Observe LiveData with the lifecycle of this Fragment
         binding.lifecycleOwner = this
-
-        // Giving the binding access to the OverviewViewModel
         binding.viewModel = viewModel
-        binding.propertiesList.adapter = PhotoGridAdapter()
-
-        setHasOptionsMenu(true)
+        binding.propertiesList.adapter = PhotoGridAdapter(PhotoGridAdapter.OnClickListener {
+            viewModel.displayPropertyDetails(it)
+        })
+        viewModel.navigateToSelectedProperty.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                val bundle = Bundle()
+                bundle.putParcelable("marsProperty", it)
+                this.findNavController().navigate(R.id.action_showDetail, bundle)
+                viewModel.navigationDone()
+            }
+        })
         return binding.root
     }
 
-    /**
-     * Inflates the overflow menu that contains filtering options.
-     */
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.overflow_menu, menu)
-        super.onCreateOptionsMenu(menu, inflater)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        val menuHost : MenuHost = requireActivity()
+        menuHost.addMenuProvider(OverflowMenu(viewModel), viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
+
+    class OverflowMenu(private val viewModel: OverviewViewModel) : MenuProvider {
+        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+            menuInflater.inflate(R.menu.overflow_menu, menu)
+        }
+
+        override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+            viewModel.showProperties(menuItem.itemId)
+            return true
+        }
+    }
+
 }

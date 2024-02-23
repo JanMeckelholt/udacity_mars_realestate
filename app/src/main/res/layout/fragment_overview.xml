@@ -31,6 +31,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context="de.janmeckelholt.mars_realestate.MainActivity">
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@id/properties_list"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:text="@{viewModel.headerText}"
+            android:textStyle="bold"
+            android:textSize="26sp"
+            android:layout_marginTop="20dp"
+            android:gravity="center_horizontal"/>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/properties_list"
             android:layout_width="0dp"
@@ -38,14 +51,22 @@
             android:padding="6dp"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             app:spanCount="2"
-            app:listData="@{viewModel.properties}"
+            app:listData="@{viewModel.shownProperties}"
             android:clipToPadding="false"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title"
             tools:itemCount="16"
             tools:listitem="@layout/grid_view_item"/>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:marsApiStatus="@{viewModel.status}"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
